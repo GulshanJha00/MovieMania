@@ -3,12 +3,18 @@
 import type React from "react"
 
 import { createContext, useContext, useEffect, useState } from "react"
+import { apiService } from "@/lib/api"
 
 interface User {
   id: string
   email: string
   name: string
   favorites: string[]
+  preferences?: {
+    favoriteGenres: string[]
+    language: string
+  }
+  role?: string
 }
 
 interface AuthContextType {
@@ -17,10 +23,11 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string) => Promise<boolean>
   logout: () => void
   isLoading: boolean
-  addToFavorites: (movieId: string) => void
-  removeFromFavorites: (movieId: string) => void
+  addToFavorites: (movieId: string) => Promise<boolean>
+  removeFromFavorites: (movieId: string) => Promise<boolean>
   isFavorite: (movieId: string) => boolean
   updateProfile: (name: string, email: string) => Promise<boolean>
+  updatePreferences: (preferences: { favoriteGenres?: string[]; language?: string }) => Promise<boolean>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -31,48 +38,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Check if user is logged in on mount
-    const savedUser = localStorage.getItem("moviemate-user")
-    if (savedUser) {
-      setUser(JSON.parse(savedUser))
+    const token = localStorage.getItem("token")
+    if (token) {
+      apiService.setToken(token)
+      // Verify token and get user data
+      apiService.getCurrentUser()
+        .then(response => {
+          setUser(response.user)
+        })
+        .catch(() => {
+          // Token is invalid, clear it
+          apiService.clearToken()
+        })
+        .finally(() => {
+          setIsLoading(false)
+        })
+    } else {
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }, [])
 
-  // Helper function to update user data in localStorage
+  // Helper function to update user data
   const updateUserData = (updatedUser: User) => {
     setUser(updatedUser)
-    localStorage.setItem("moviemate-user", JSON.stringify(updatedUser))
-
-    // Also update in the users array
-    const users = JSON.parse(localStorage.getItem("moviemate-users") || "[]")
-    const userIndex = users.findIndex((u: any) => u.id === updatedUser.id)
-    if (userIndex !== -1) {
-      users[userIndex] = { ...updatedUser, password: users[userIndex].password }
-      localStorage.setItem("moviemate-users", JSON.stringify(users))
-    }
   }
 
   // Favorites management functions
-  const addToFavorites = (movieId: string) => {
-    if (!user) return
+  const addToFavorites = async (movieId: string): Promise<boolean> => {
+    if (!user) return false
 
-    if (!user.favorites.includes(movieId)) {
+    try {
+      const response = await apiService.addToFavorites(movieId)
       const updatedUser = {
         ...user,
-        favorites: [...user.favorites, movieId],
+        favorites: response.favorites,
       }
       updateUserData(updatedUser)
+      return true
+    } catch (error) {
+      console.error('Error adding to favorites:', error)
+      return false
     }
   }
 
-  const removeFromFavorites = (movieId: string) => {
-    if (!user) return
+  const removeFromFavorites = async (movieId: string): Promise<boolean> => {
+    if (!user) return false
 
-    const updatedUser = {
-      ...user,
-      favorites: user.favorites.filter((id) => id !== movieId),
+    try {
+      const response = await apiService.removeFromFavorites(movieId)
+      const updatedUser = {
+        ...user,
+        favorites: response.favorites,
+      }
+      updateUserData(updatedUser)
+      return true
+    } catch (error) {
+      console.error('Error removing from favorites:', error)
+      return false
     }
-    updateUserData(updatedUser)
   }
 
   const isFavorite = (movieId: string) => {
@@ -82,66 +105,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // Check if user exists in localStorage
-    const users = JSON.parse(localStorage.getItem("moviemate-users") || "[]")
-    const existingUser = users.find((u: any) => u.email === email && u.password === password)
-
-    if (existingUser) {
-      const userWithoutPassword = { ...existingUser }
-      delete userWithoutPassword.password
-      setUser(userWithoutPassword)
-      localStorage.setItem("moviemate-user", JSON.stringify(userWithoutPassword))
+    try {
+      const response = await apiService.login({ email, password })
+      setUser(response.user)
       setIsLoading(false)
       return true
+    } catch (error) {
+      console.error('Login error:', error)
+      setIsLoading(false)
+      return false
     }
-
-    setIsLoading(false)
-    return false
   }
 
   const signup = async (email: string, password: string, name: string): Promise<boolean> => {
     setIsLoading(true)
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // Check if user already exists
-    const users = JSON.parse(localStorage.getItem("moviemate-users") || "[]")
-    const existingUser = users.find((u: any) => u.email === email)
-
-    if (existingUser) {
+    try {
+      const response = await apiService.register({ name, email, password })
+      setUser(response.user)
+      setIsLoading(false)
+      return true
+    } catch (error) {
+      console.error('Signup error:', error)
       setIsLoading(false)
       return false
     }
-
-    // Create new user
-    const newUser = {
-      id: Date.now().toString(),
-      email,
-      password,
-      name,
-      favorites: [],
-    }
-
-    users.push(newUser)
-    localStorage.setItem("moviemate-users", JSON.stringify(users))
-
-    // Log in the new user
-    const userWithoutPassword = { ...newUser }
-    delete userWithoutPassword.password
-    setUser(userWithoutPassword)
-    localStorage.setItem("moviemate-user", JSON.stringify(userWithoutPassword))
-
-    setIsLoading(false)
-    return true
   }
 
   const logout = () => {
     setUser(null)
-    localStorage.removeItem("moviemate-user")
+    apiService.clearToken()
   }
 
   const updateProfile = async (name: string, email: string): Promise<boolean> => {
@@ -149,28 +142,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setIsLoading(true)
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // Check if email is already taken by another user
-    const users = JSON.parse(localStorage.getItem("moviemate-users") || "[]")
-    const existingUser = users.find((u: any) => u.email === email && u.id !== user.id)
-
-    if (existingUser) {
+    try {
+      const response = await apiService.updateProfile({ name, email })
+      setUser(response.user)
+      setIsLoading(false)
+      return true
+    } catch (error) {
+      console.error('Update profile error:', error)
       setIsLoading(false)
       return false
     }
+  }
 
-    // Update user data
-    const updatedUser = {
-      ...user,
-      name,
-      email,
+  const updatePreferences = async (preferences: { favoriteGenres?: string[]; language?: string }): Promise<boolean> => {
+    if (!user) return false
+
+    setIsLoading(true)
+
+    try {
+      const response = await apiService.updatePreferences(preferences)
+      setUser(response.user)
+      setIsLoading(false)
+      return true
+    } catch (error) {
+      console.error('Update preferences error:', error)
+      setIsLoading(false)
+      return false
     }
-
-    updateUserData(updatedUser)
-    setIsLoading(false)
-    return true
   }
 
   return (
@@ -185,6 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         removeFromFavorites,
         isFavorite,
         updateProfile,
+        updatePreferences,
       }}
     >
       {children}

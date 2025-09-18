@@ -32,7 +32,7 @@ export function DashboardNavbar({ onSearch }: DashboardNavbarProps) {
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2">
             <Film className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">MovieMate</span>
+            <span className="text-xl font-bold">MovieMania</span>
           </Link>
 
           {/* Navigation Links */}

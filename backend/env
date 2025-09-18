@@ -1,0 +1,16 @@
+# Database
+MONGODB_URI=mongodb+srv://gk4763549_db_user:C7lfjc2VjeKvRcIc@cluster0.g54qwmn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+
+# JWT
+JWT_SECRET=your-super-secret-jwt-key-here
+JWT_EXPIRE=7d
+
+# Google Gemini API
+GEMINI_API_KEY=AIzaSyBRwfCnhnfg2s7GCo6m67yHJeO6anJ-S4Q
+
+# Server
+PORT=5001
+NODE_ENV=development
+
+# CORS
+FRONTEND_URL=http://localhost:3000

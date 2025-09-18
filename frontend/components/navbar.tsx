@@ -22,7 +22,7 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="text-2xl font-bold text-primary">
-              MovieMate
+              MovieMania
             </Link>
           </div>
 
@@ -45,12 +45,12 @@ export function Navbar() {
           </div>
 
           <div className="hidden md:block">
-            <Link href="/auth/login">
+            <Link href="/login">
               <Button variant="outline" className="mr-2 bg-transparent">
                 Sign In
               </Button>
             </Link>
-            <Link href="/auth/signup">
+            <Link href="/signup">
               <Button>Get Started</Button>
             </Link>
           </div>

@@ -9,7 +9,7 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <Link href="/" className="text-2xl font-bold text-primary mb-4 block">
-              MovieMate
+              MovieMania
             </Link>
             <p className="text-muted-foreground mb-6 max-w-md">
               Your ultimate destination for discovering and enjoying movies. Powered by AI recommendations and built for
@@ -87,7 +87,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-border mt-8 pt-8 text-center">
-          <p className="text-muted-foreground">© 2024 MovieMate. All rights reserved. Built with ❤️ for movie lovers.</p>
+          <p className="text-muted-foreground">© 2025 MovieMania. All rights reserved.</p>
         </div>
       </div>
     </footer>
