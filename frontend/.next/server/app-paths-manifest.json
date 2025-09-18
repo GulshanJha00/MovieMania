@@ -1,8 +1,7 @@
 {
-  "/favorites/page": "app/favorites/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/chatbot/page": "app/chatbot/page.js",
   "/login/page": "app/login/page.js",
-  "/signup/page": "app/signup/page.js",
-  "/page": "app/page.js"
+  "/page": "app/page.js",
+  "/favorites/page": "app/favorites/page.js",
+  "/chatbot/page": "app/chatbot/page.js",
+  "/signup/page": "app/signup/page.js"
 }
